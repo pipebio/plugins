@@ -3,7 +3,7 @@ import os
 from pipebio.models.job_status import JobStatus
 from pipebio.pipebio_client import PipebioClient
 
-from custom_code import downloader
+from custom_code import trinityJob
 
 if __name__ == '__main__':
     client = PipebioClient()
@@ -11,6 +11,7 @@ if __name__ == '__main__':
     client.jobs.update(JobStatus.RUNNING, 25, ['Running custom job.'])
 
     user = client.user
+    print(user)
     print(f"Using api key for {user['firstName']} {user['lastName']}.")
 
     client.jobs.update(JobStatus.RUNNING, 50, [f"Logged in for {user['firstName']} {user['lastName']}."])
@@ -21,6 +22,6 @@ if __name__ == '__main__':
     if len(input_entity_ids) == 0:
         raise Exception('INPUT_ENTITIES missing')
 
-    downloader.download_files(client, input_entity_ids)
+    trinityJob.run(client, user, input_entity_ids)
 
-    client.jobs.set_complete(['Completed custom job.'])
+    # client.jobs.set_complete(['Completed custom job.'])
