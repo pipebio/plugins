@@ -7,7 +7,7 @@ set -euo pipefail
 
 # Temporarily disable strict mode and activate conda:
 set +euo pipefail
-conda activate custom-jobs-venv
+conda activate plugins-venv
 
 # Re-enable strict mode:
 set -euo pipefail

@@ -1,4 +1,4 @@
-name: custom-jobs-venv
+name: plugins-venv
 channels:
   - conda-forge
   - bioconda

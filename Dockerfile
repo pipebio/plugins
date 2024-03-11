@@ -45,6 +45,6 @@ ADD bin/entrypoint.sh bin/entrypoint.sh
 ADD runner.py runner.py
 ADD custom_code custom_code/
 
-RUN conda init bash && source ~/.bashrc && conda activate custom-jobs-venv
+RUN conda init bash && source ~/.bashrc && conda activate plugins-venv
 
 CMD [ "/bin/entrypoint.sh" ]

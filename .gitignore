@@ -236,6 +236,6 @@ fabric.properties
 /.idea/misc.xml
 /.idea/modules.xml
 /.idea/vcs.xml
-/custom-jobs-venv/.gitignore
-/custom-jobs-venv/pyvenv.cfg
+/plugins-venv/.gitignore
+/plugins-venv/pyvenv.cfg
 /test/
