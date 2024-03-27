@@ -21,15 +21,15 @@ if __name__ == '__main__':
                            progress=20,
                            messages=[f"Logged in for {user['firstName']} {user['lastName']}."])
 
-        input_entity_ids = os.environ["INPUT_ENTITIES"] if "INPUT_ENTITIES" in os.environ else ""
+        input_entities = job['inputEntities'] if job['inputEntities'] is not None else []
         input_entity_ids = list(
             map(
-                lambda input_entity_id: input_entity_id.strip(), input_entity_ids.split(",")
+                lambda input_entity: input_entity['id'], input_entities
             )
         )
 
         if len(input_entity_ids) == 0:
-            raise Exception("INPUT_ENTITIES missing")
+            raise Exception("No documents found in inputEntities")
 
         folder_key = 'TARGET_FOLDER_ID'
         target_folder_id = os.environ[folder_key] if folder_key in os.environ else None
