@@ -239,3 +239,4 @@ fabric.properties
 /plugins-venv/.gitignore
 /plugins-venv/pyvenv.cfg
 /test/
+plugins.iml
