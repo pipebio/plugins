@@ -42,7 +42,7 @@ ADD environment.yml /environment.yml
 RUN conda env create -f environment.yml || conda env update -f environment.yml
 
 ADD bin/entrypoint.sh bin/entrypoint.sh
-ADD runner.py runner.py
+COPY *.py .
 ADD custom_code custom_code/
 
 RUN conda init bash && source ~/.bashrc && conda activate plugins-venv

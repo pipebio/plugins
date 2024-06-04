@@ -10,3 +10,5 @@ dependencies:
   - pip:
       - pipebio
       - numpy
+      - psutil
+      - biopython==1.78

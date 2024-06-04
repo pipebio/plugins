@@ -2,12 +2,17 @@ import os
 import subprocess
 import time
 from typing import List
-
-from pipebio.column import Column
+import psutil
+from Bio import SeqIO
+from pipebio.column import Column, IntegerColumn, StringColumn
+from pipebio.models.entity_types import EntityTypes
 from pipebio.models.job_status import JobStatus
 from pipebio.models.table_column_type import TableColumnType
 from pipebio.pipebio_client import PipebioClient
+from pipebio.uploader import Uploader
 from pipebio.util import Util
+
+from exceptions import UserFacingException
 
 
 def get_file(client, entity_id: str, destination_location: str = None) -> str:
@@ -44,10 +49,19 @@ def get_file(client, entity_id: str, destination_location: str = None) -> str:
 
 def run_trinity(files: List[str]) -> str:
     output_file = "/tmp/trinity_output"
-    command = f"/root/trinityrnaseq-v2.15.1/Trinity" \
-              f" --seqType fq --left {files[0]} " \
-              f"--right {files[1]} " \
-              f"--output {output_file} --max_memory 2G"
+    available_cpu = get_number_of_cpus()
+
+    commands = [
+        f"/root/trinityrnaseq-v2.15.1/Trinity",
+        f"--seqType fq",
+        f"--left {files[0]} ",
+        f"--right {files[1]} ",
+        f"--CPU {available_cpu} ",
+        f"--max_memory 40G ",
+        f"--output {output_file} "
+    ]
+
+    command = " ".join(commands)
 
     print(f"Running: {command}")
     p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -73,35 +87,76 @@ def wait_for_job_to_finish(client: PipebioClient, job_id: str):
     return job
 
 
-def run(client: PipebioClient, user, entity_ids: List[str], target_folder_id: str):
+def run(client: PipebioClient, user, entity_ids: List[str], target_folder_id: str) -> dict:
     if len(entity_ids) != 2:
         raise Exception("Trinity job supports two inputs only")
 
-    files = []
-    for entity_id in entity_ids:
-        files.append(get_file(client, entity_id, "/tmp"))
+    client.jobs.update(JobStatus.RUNNING, 10, ["Downloading input documents"])
 
-    client.jobs.update(JobStatus.RUNNING, 40, ["Downloaded files."])
+    files = list(get_file(client, entity_id, "/tmp") for entity_id in entity_ids)
+
+    client.jobs.update(JobStatus.RUNNING, 20, ["Downloaded input documents"])
 
     file_1 = client.entities.get(entity_ids[0])
     file_2 = client.entities.get(entity_ids[1])
-    owner_id = file_1['ownerId']
+    project_id = file_1['ownerId']
     file_name = f"Trinity output ({file_1['name']} & {file_2['name']})"
 
+    client.jobs.update(JobStatus.RUNNING, 30, ["Running trinity"])
+
     output_file = run_trinity(files)
-    print(output_file)
 
-    client.jobs.update(JobStatus.RUNNING, 60, ["Ran trinity tool."])
+    if not os.path.exists(output_file):
+        raise UserFacingException("Trinity failed to create a result.")
 
-    organisation_id = user['orgs'][0]['id']
-    import_job = client.upload_file(file_name=file_name,
-                                    absolute_file_location=output_file,
-                                    organization_id=organisation_id,
-                                    parent_id=int(target_folder_id),
-                                    project_id=owner_id)
+    print(f'Created trinity output: {output_file}')
 
-    finished_job = wait_for_job_to_finish(client, import_job["id"])
+    client.jobs.update(JobStatus.RUNNING, 70, ["Ran trinity"])
 
-    client.jobs.update(JobStatus.RUNNING, 80, ["Uploaded output file."])
+    organization_id = user['orgs'][0]['id']
 
-    return finished_job["outputEntities"][0]["id"]
+    result = client.entities.create_file(
+        project_id=project_id,
+        parent_id=int(target_folder_id),
+        name=file_name,
+        entity_type=EntityTypes.SEQUENCE_DOCUMENT,
+        visible=False
+    )
+
+    schema = [IntegerColumn('id'), StringColumn('name'), StringColumn('sequence')]
+    uploader = Uploader(
+        result['id'],
+        schema,
+        client.sequences,
+        chunk_size=100 * 1000 * 1000,
+        make_charts=False,
+        entity_type=EntityTypes.SEQUENCE_DOCUMENT
+    )
+    with open(output_file) as trinity_result:
+        for record in SeqIO.parse(trinity_result, "fasta"):
+            uploader.write_data({
+                'name': record.name,
+                'sequence': record.seq,
+            })
+
+    uploader.upload(allow_empty=False)
+
+    return result
+
+
+def get_number_of_cpus() -> int:
+    """
+    Returns the number of available CPUS using the best information available.
+
+    In docker containers it's difficult to get the number of CPUS which can be dangerous:
+      - if underestimated we don't make use of the available resource and jobs run too slow
+      - if overestimated the job will run (much) slower because it tries to run too many processes
+
+    Therefore we prefer to use explicit environment variables wherever possible and fallback to psutil which is
+    more convenient for running unit tests / development etc.
+    """
+    count = int(os.environ['NUMBER_OF_CPUS']) if 'NUMBER_OF_CPUS' in os.environ else psutil.cpu_count(logical=False)
+
+    print('number_of_cpus={}'.format(count))
+
+    return 1

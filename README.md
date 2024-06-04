@@ -23,13 +23,21 @@ some basic validation and launches your custom code.
 It can interact with PipeBio via the SDK and any additional code you wish to add. 
 If you need to add any new dependencies, ensure you have added them to the `Dockerfile`
 
-## Building plugins
+## Building the Dockerfile and sharing with PipeBio
 See [docker-build-a-beginners-guide-to-building-docker-images](https://stackify.com/docker-build-a-beginners-guide-to-building-docker-images/) for an explanation of how to build docker images if you need help.
+To build the Dockerfile in this repo
+1. Create a [Dockerhub account](https://hub.docker.com/signup) and repo if you haven't already. We recommend you make the repo private.
+2. Install and run Docker if you haven't already
+3. Then run `docker build -t <your-dockerhub-username>/<docker-project-repo>:<tagname> .` from the root directory. If you're on a mac run `docker build -t your-dockerhub-username>/<docker-project-repo>:<tagname> --platform linux/x86_64  .`
+    - `<your-dockerhub-username>` from your Dockerhub account, [see your profile page here](https://hub.docker.com/settings/general).
+    - `<docker-project-repo>` the repo in your Dockerhub account you want to push to.
+    - `<tagname>` a useful tag to identify this build, such as `latest`.
+4. Push the tagged image from (3) to dockerhub: `docker push <docker-project-repo>/<tagname>`. For example: `docker push owenlamontecribbbodley/pipebio-tests:latest`
+5. In Dockerhub add `pipebio` as a collaborator so we can pull the build and run it.
 
-## Running plugins
-When you have finished development of your plugin, you will need to push the image to a container image repository, for instance [Dockerhub](https://hub.docker.com/). 
-If your repository is private, you will need to add `pipebio` as a collaborator for us to be able to pull the image.
+## Developing your Plugin & making changes to the Dockerfile
+As you make changes to the Dockerfile you will need to build and push again to have the changes picked up in PipeBio.
+For example: `docker build -t <your-dockerhub-username>/<docker-project-repo>:<tagname> .` then `docker push <your-dockerhub-username>/<docker-project-repo>:<tagname>`
 
-Once the plugin is pushed to a repo, that PipeBio is a collaborator on, you are ready to begin configuring you plugin in the PipeBio app. 
-This will allow you to configure and parameters needed at runtime for your plugin and to set the image to use for your plugin.
-
+## Important things to be aware of
+1. You are responsible for handling failures in your code.
