@@ -1,3 +1,4 @@
+import csv
 import os
 import subprocess
 import time
@@ -24,22 +25,16 @@ def get_file(client, entity_id: str, destination_location: str = None) -> str:
     absolute_location = os.path.join(destination_location, destination_filename)
 
     client.sequences.download(entity_id, destination=absolute_location)
-    columns = [
-        Column('id', TableColumnType.STRING),
-        Column('name', TableColumnType.STRING),
-        Column('description', TableColumnType.STRING),
-        Column('sequence', TableColumnType.STRING),
-        Column('quality', TableColumnType.STRING),
-    ]
-    sequence_map = {}
-    client.sequences.read_tsv_to_map(filepath=absolute_location,
-                                     columns=columns,
-                                     id_prefix=entity_id,
-                                     sequence_map=sequence_map)
-
     filename = f"/tmp/{entity_id}.fq"
-    with open(filename, mode="w") as file:
-        for key, row in sequence_map.items():
+
+    with (open(absolute_location, mode="r") as tsvfile,
+          open(filename, mode="w") as file):
+        replaced = (x.replace('\0', '') for x in tsvfile)
+        reader = csv.DictReader(replaced, dialect='excel-tab')
+        for row in reader:
+            if 'id' not in row:
+                raise Exception('id not in row')
+
             compound_id = f"{row['name']} {row['description']}"
             line = f"@{compound_id}\n{row['sequence']}\n+\n{row['quality']}\n"
             file.writelines([line])
@@ -50,6 +45,7 @@ def get_file(client, entity_id: str, destination_location: str = None) -> str:
 def run_trinity(files: List[str]) -> str:
     output_file = "/tmp/trinity_output"
     available_cpu = get_number_of_cpus()
+    max_memory = get_max_memory()
 
     commands = [
         f"/root/trinityrnaseq-v2.15.1/Trinity",
@@ -57,7 +53,7 @@ def run_trinity(files: List[str]) -> str:
         f"--left {files[0]} ",
         f"--right {files[1]} ",
         f"--CPU {available_cpu} ",
-        f"--max_memory 40G ",
+        f"--max_memory {max_memory} ",
         f"--output {output_file} "
     ]
 
@@ -159,4 +155,8 @@ def get_number_of_cpus() -> int:
 
     print('number_of_cpus={}'.format(count))
 
-    return 1
+    return count
+
+
+def get_max_memory() -> str:
+    return os.environ['MAX_MEMORY'] if 'MAX_MEMORY' in os.environ else '40G'
