@@ -3,17 +3,82 @@ import os
 import subprocess
 import time
 from typing import List
+
 import psutil
 from Bio import SeqIO
-from pipebio.column import Column, IntegerColumn, StringColumn
+from pipebio.column import IntegerColumn, StringColumn
 from pipebio.models.entity_types import EntityTypes
 from pipebio.models.job_status import JobStatus
-from pipebio.models.table_column_type import TableColumnType
 from pipebio.pipebio_client import PipebioClient
 from pipebio.uploader import Uploader
 from pipebio.util import Util
 
 from exceptions import UserFacingException
+
+
+def run(client: PipebioClient, entity_ids: List[str], target_folder_id: str) -> dict:
+    """
+    The entry point of the trinity custom job. It runs the these steps:
+     - downloads two input files
+     - runs the trinity tool against the input files
+     - uploads the trinity output as a new document - the job output
+    :param client: PipebioClient
+    :param entity_ids: List of ids of the job input documents
+    :param target_folder_id: the id of the folder to write the job results too
+    :return:
+    """
+    if len(entity_ids) != 2:
+        raise Exception("Trinity job supports two inputs only")
+
+    client.jobs.update(JobStatus.RUNNING, 10, ["Downloading input documents"])
+
+    files = list(get_file(client, entity_id, "/tmp") for entity_id in entity_ids)
+
+    client.jobs.update(JobStatus.RUNNING, 20, ["Downloaded input documents"])
+
+    file_1 = client.entities.get(entity_ids[0])
+    file_2 = client.entities.get(entity_ids[1])
+    project_id = file_1['ownerId']
+    file_name = f"Trinity output ({file_1['name']} & {file_2['name']})"
+
+    client.jobs.update(JobStatus.RUNNING, 30, ["Running trinity"])
+
+    output_file = run_trinity(files)
+
+    if not os.path.exists(output_file):
+        raise UserFacingException("Trinity failed to create a result.")
+
+    print(f'Created trinity output: {output_file}')
+
+    client.jobs.update(JobStatus.RUNNING, 70, ["Ran trinity"])
+
+    result = client.entities.create_file(
+        project_id=project_id,
+        parent_id=int(target_folder_id),
+        name=file_name,
+        entity_type=EntityTypes.SEQUENCE_DOCUMENT,
+        visible=False
+    )
+
+    schema = [IntegerColumn('id'), StringColumn('name'), StringColumn('sequence')]
+    uploader = Uploader(
+        result['id'],
+        schema,
+        client.sequences,
+        chunk_size=100 * 1000 * 1000,
+        make_charts=False,
+        entity_type=EntityTypes.SEQUENCE_DOCUMENT
+    )
+    with open(output_file) as trinity_result:
+        for record in SeqIO.parse(trinity_result, "fasta"):
+            uploader.write_data({
+                'name': record.name,
+                'sequence': record.seq,
+            })
+
+    uploader.upload(allow_empty=False)
+
+    return result
 
 
 def get_file(client, entity_id: str, destination_location: str = None) -> str:
@@ -81,63 +146,6 @@ def wait_for_job_to_finish(client: PipebioClient, job_id: str):
             time.sleep(5)
 
     return job
-
-
-def run(client: PipebioClient, user, entity_ids: List[str], target_folder_id: str) -> dict:
-    if len(entity_ids) != 2:
-        raise Exception("Trinity job supports two inputs only")
-
-    client.jobs.update(JobStatus.RUNNING, 10, ["Downloading input documents"])
-
-    files = list(get_file(client, entity_id, "/tmp") for entity_id in entity_ids)
-
-    client.jobs.update(JobStatus.RUNNING, 20, ["Downloaded input documents"])
-
-    file_1 = client.entities.get(entity_ids[0])
-    file_2 = client.entities.get(entity_ids[1])
-    project_id = file_1['ownerId']
-    file_name = f"Trinity output ({file_1['name']} & {file_2['name']})"
-
-    client.jobs.update(JobStatus.RUNNING, 30, ["Running trinity"])
-
-    output_file = run_trinity(files)
-
-    if not os.path.exists(output_file):
-        raise UserFacingException("Trinity failed to create a result.")
-
-    print(f'Created trinity output: {output_file}')
-
-    client.jobs.update(JobStatus.RUNNING, 70, ["Ran trinity"])
-
-    organization_id = user['orgs'][0]['id']
-
-    result = client.entities.create_file(
-        project_id=project_id,
-        parent_id=int(target_folder_id),
-        name=file_name,
-        entity_type=EntityTypes.SEQUENCE_DOCUMENT,
-        visible=False
-    )
-
-    schema = [IntegerColumn('id'), StringColumn('name'), StringColumn('sequence')]
-    uploader = Uploader(
-        result['id'],
-        schema,
-        client.sequences,
-        chunk_size=100 * 1000 * 1000,
-        make_charts=False,
-        entity_type=EntityTypes.SEQUENCE_DOCUMENT
-    )
-    with open(output_file) as trinity_result:
-        for record in SeqIO.parse(trinity_result, "fasta"):
-            uploader.write_data({
-                'name': record.name,
-                'sequence': record.seq,
-            })
-
-    uploader.upload(allow_empty=False)
-
-    return result
 
 
 def get_number_of_cpus() -> int:

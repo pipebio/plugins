@@ -11,6 +11,7 @@ if __name__ == '__main__':
     client = PipebioClient()
 
     try:
+        # Update the job, to indicate that it is running.
         client.jobs.update(status=JobStatus.RUNNING,
                            progress=1,
                            messages=['Running plugin job.'])
@@ -22,6 +23,7 @@ if __name__ == '__main__':
                            progress=20,
                            messages=[f"Logged in for {user['firstName']} {user['lastName']}."])
 
+        # Get the input_entity_ids from the job inputEntities.
         input_entities = job['inputEntities'] if job['inputEntities'] is not None else []
         input_entity_ids = list(
             map(
@@ -35,8 +37,14 @@ if __name__ == '__main__':
         folder_key = 'TARGET_FOLDER_ID'
         target_folder_id = os.environ[folder_key] if folder_key in os.environ else None
 
-        output_entity = trinityJob.run(client, user, input_entity_ids, target_folder_id)
+        # This is the line a plugin author would change, to call your custom code.
+        # Below are passed as args (though your use case may need different args):
+        #     - the PipeBio client instance.
+        #     - the ids of the entities to process (parsed from the job inputs).
+        #     - the id of the folder to write the job results to (parsed from the job inputs).
+        output_entity = trinityJob.run(client, input_entity_ids, target_folder_id)
 
+        # Set job as complete, adding the entity id of the output, so it is shown in the jobs table.
         output_entity_id = output_entity['id']
         client.jobs.set_complete(messages=["Completed plugin job."],
                                  output_entity_ids=[output_entity_id])

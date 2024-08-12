@@ -28,7 +28,7 @@ See [docker-build-a-beginners-guide-to-building-docker-images](https://stackify.
 To build the Dockerfile in this repo
 1. Create a [Dockerhub account](https://hub.docker.com/signup) and repo if you haven't already. We recommend you make the repo private.
 2. Install and run Docker if you haven't already
-3. Then run `docker build -t <your-dockerhub-username>/<docker-project-repo>:<tagname> .` from the root directory. If you're on a mac run `docker build -t your-dockerhub-username>/<docker-project-repo>:<tagname> --platform linux/x86_64  .`
+3. Then run `docker build -t <your-dockerhub-username>/<docker-project-repo>:<tagname> .` from the root directory. If you're on a mac run `docker build -t <your-dockerhub-username>/<docker-project-repo>:<tagname> --platform linux/x86_64  .`
     - `<your-dockerhub-username>` from your Dockerhub account, [see your profile page here](https://hub.docker.com/settings/general).
     - `<docker-project-repo>` the repo in your Dockerhub account you want to push to.
     - `<tagname>` a useful tag to identify this build, such as `latest`.
@@ -38,6 +38,11 @@ To build the Dockerfile in this repo
 ## Developing your Plugin & making changes to the Dockerfile
 As you make changes to the Dockerfile you will need to build and push again to have the changes picked up in PipeBio.
 For example: `docker build -t <your-dockerhub-username>/<docker-project-repo>:<tagname> .` then `docker push <your-dockerhub-username>/<docker-project-repo>:<tagname>`
+
+## Environment variables
+The following environment variables are made available to your code, when running in the PipeBio infrastructure:
+* NUMBER_OF_CPUS - an integer count of the number of cpu's available
+* AVAILABLE_MEMORY - an integer count of Mib of available memory
 
 ## Important things to be aware of
 1. You are responsible for handling failures in your code.

@@ -14,7 +14,7 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     cmake \
     libz-dev
 
-# Grab trinity and build
+# Download trinity and build
 RUN wget https://github.com/trinityrnaseq/trinityrnaseq/releases/download/Trinity-v2.15.1/trinityrnaseq-v2.15.1.FULL.tar.gz \
     && tar -C /root -xvf trinityrnaseq-v2.15.1.FULL.tar.gz \
     && rm -f trinityrnaseq-v2.15.1.FULL.tar.gz
@@ -23,6 +23,7 @@ ENV PATH="/root/trinityrnaseq-v2.15.1:${PATH}"
 ARG PATH="/root/trinityrnaseq-v2.15.1:${PATH}"
 
 RUN cd /root/trinityrnaseq-v2.15.1 && make || true
+
 # Remove build dependencies
 RUN apt-get remove -y build-essential cmake libz-dev
 
