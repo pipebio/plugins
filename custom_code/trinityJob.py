@@ -1,7 +1,6 @@
 import csv
 import os
 import subprocess
-import time
 from typing import List
 
 import psutil
@@ -16,7 +15,7 @@ from pipebio.util import Util
 from exceptions import UserFacingException
 
 
-def run(client: PipebioClient, entity_ids: List[str], target_folder_id: str) -> dict:
+def run(client: PipebioClient, entity_ids: List[str], target_folder_id: int = None) -> dict:
     """
     The entry point of the trinity custom job. It runs the these steps:
      - downloads two input files
@@ -24,7 +23,7 @@ def run(client: PipebioClient, entity_ids: List[str], target_folder_id: str) -> 
      - uploads the trinity output as a new document - the job output
     :param client: PipebioClient
     :param entity_ids: List of ids of the job input documents
-    :param target_folder_id: the id of the folder to write the job results too
+    :param target_folder_id: the id of the folder to write the job results too (defaults to project root)
     :return:
     """
     if len(entity_ids) != 2:
@@ -54,7 +53,7 @@ def run(client: PipebioClient, entity_ids: List[str], target_folder_id: str) -> 
 
     result = client.entities.create_file(
         project_id=project_id,
-        parent_id=int(target_folder_id),
+        parent_id=target_folder_id,
         name=file_name,
         entity_type=EntityTypes.SEQUENCE_DOCUMENT,
         visible=False
@@ -131,21 +130,6 @@ def run_trinity(files: List[str]) -> str:
     p.wait()
 
     return f"{output_file}.Trinity.fasta"
-
-
-def wait_for_job_to_finish(client: PipebioClient, job_id: str):
-    done = False
-    job = None
-
-    while not done:
-        job = client.jobs.get(job_id)
-        job_status = job['status']
-        print(f'job status: {job_status}')
-        done = job_status in [JobStatus.COMPLETE.value, JobStatus.FAILED.value]
-        if not done:
-            time.sleep(5)
-
-    return job
 
 
 def get_number_of_cpus() -> int:

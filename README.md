@@ -7,7 +7,8 @@ developed at the Broad Institute and the Hebrew University of Jerusalem.
 
 Plugins are packaged as docker images and use the [PipeBio python SDK](https://github.com/pipebio/python-library) to interact with PipeBio, 
 in the same way you would if you were running the code locally. 
-The plugin architecture automatically authenticates as the user running the job, you do not need to do anything for this. 
+
+The plugin architecture **automatically** authenticates as the user running the job, you do not need to do anything for this. 
 When running the plugin will have the **same project permissions** as the user running the job.
 
 The Dockerfile is used to create the docker image, it:
@@ -43,6 +44,13 @@ For example: `docker build -t <your-dockerhub-username>/<docker-project-repo>:<t
 The following environment variables are made available to your code, when running in the PipeBio infrastructure:
 * NUMBER_OF_CPUS - an integer count of the number of cpu's available
 * AVAILABLE_MEMORY - an integer count of Mib of available memory
+
+## Testing you code locally
+As you write you plugin, it can be useful to run it locally, before pushing to dockerhub. The file `runner_test.py` allows you to do this. 
+
+It first creates a job record, that you plugin code can interact with (getting details of the input docs/updating status etc).
+
+It then runs a `docker run ...` command of you packaged code, on your local machine, writing all output to the terminal.
 
 ## Important things to be aware of
 1. You are responsible for handling failures in your code.
