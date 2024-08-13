@@ -9,6 +9,12 @@ from exceptions import UserFacingException
 
 
 def main():
+    """
+    This is the entrypoint of the plugin.
+    Plugin authors should only edit the line that calls their custom code,
+    the rest can be seen as boilerplate that sets up the plugin.
+    :return:
+    """
     client = PipebioClient()
 
     try:
@@ -20,8 +26,9 @@ def main():
         user = client.user
         job = client.jobs.get()
 
+        # Add job status message, showing the user the plugin is running as.
         client.jobs.update(status=JobStatus.RUNNING,
-                           progress=20,
+                           progress=10,
                            messages=[f"Logged in for {user['firstName']} {user['lastName']}."])
 
         # Get the input_entity_ids from the job inputEntities.
@@ -32,6 +39,7 @@ def main():
             )
         )
 
+        # Sanity check, to ensure there is at least one input document.
         if len(input_entity_ids) == 0:
             raise Exception("No documents found in inputEntities")
 
@@ -52,13 +60,16 @@ def main():
 
     except UserFacingException as exception:
         track = traceback.format_exc()
-        print('job_wrapper: caught SafeException!!!')
+        print("job_wrapper: caught SafeException!!!")
         print(str(exception))
         print(track)
+        messages = [exception.user_message]
+        if "CREATOR_EMAIL" in os.environ:
+            # Allows users who experience issue to get in contact with the Plugin creator.
+            messages.append(f"The plugin developer {os.environ['CREATOR_EMAIL']} may be able to help")
         client.jobs.update(status=JobStatus.FAILED,
                            progress=100,
-                           messages=[exception.user_message])
-
+                           messages=messages)
 
     except Exception as exception:
         print("Runner caught exception")
@@ -66,9 +77,13 @@ def main():
         str_exception = str(exception)
         print(str_exception)
         print(track)
+        messages = [f"Unexpected error in plugin job: {str_exception}"]
+        if "CREATOR_EMAIL" in os.environ:
+            # Allows users who experience issue to get in contact with the Plugin creator.
+            messages.append(f"The plugin developer {os.environ['CREATOR_EMAIL']} may be able to help")
         client.jobs.update(status=JobStatus.FAILED,
                            progress=100,
-                           messages=[f"Unexpected error in plugin job: {str_exception}"])
+                           messages=messages)
         raise exception
 
 
