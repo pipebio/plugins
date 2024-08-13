@@ -48,7 +48,9 @@ The following environment variables are made available to your code, when runnin
 ## Testing you code locally
 As you write you plugin, it can be useful to run it locally, before pushing to dockerhub. The file `runner_test.py` allows you to do this. 
 
-It first creates a job record, that you plugin code can interact with (getting details of the input docs/updating status etc).
+You will need the [pipebio sdk](https://pypi.org/project/pipebio/) installed locally, see notes there on how to use with an _.env_ file, to set your _PIPE_API_KEY_.
+
+`runner_test.py` first creates a job record, that you plugin code can interact with (getting details of the input docs/updating status etc).
 
 It then runs a `docker run ...` command of you packaged code, on your local machine, writing all output to the terminal.
 

@@ -5,7 +5,10 @@ from pipebio.models.job_type import JobType
 from pipebio.pipebio_client import PipebioClient
 
 # This file allows you to run a docker image locally, to test code as you write it.
-# You will need to set:
+# It requires that you have installed the pipebio sdk (https://pypi.org/project/pipebio/),
+# have already created a docker image of your plugin and have docker running on your machine.
+#
+# You will need to set the following variables:
 # - shareable_id
 # - input_entity_ids
 # - docker_image
@@ -42,6 +45,7 @@ if __name__ == '__main__':
     # locally, its required to be able to authenticate.
     PIPE_API_KEY = os.environ['PIPE_API_KEY']
 
+    # If you are running on a mac computer, it may be helpful to add `f"--platform linux/x86_64",` to the commands.
     commands = [
         f"docker run",
         f"-e JOB_ID={job_id}",
