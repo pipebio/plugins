@@ -7,7 +7,8 @@ from pipebio.pipebio_client import PipebioClient
 from custom_code import trinityJob
 from exceptions import UserFacingException
 
-if __name__ == '__main__':
+
+def main():
     client = PipebioClient()
 
     try:
@@ -69,3 +70,7 @@ if __name__ == '__main__':
                            progress=100,
                            messages=[f"Unexpected error in plugin job: {str_exception}"])
         raise exception
+
+
+if __name__ == '__main__':
+    main()

@@ -29,7 +29,7 @@ if __name__ == '__main__':
                                 job_type=JobType.PluginJob,
                                 input_entity_ids=input_entity_ids,
                                 name='Example run test',
-                                # Important this is set, it creates a record for the job, to be used
+                                # Important client_side is set, it creates a record for the job, to be used
                                 # by your plugin code, but does not actually run anything, that is done in the
                                 # `docker run....` step.
                                 client_side=True)
@@ -51,6 +51,7 @@ if __name__ == '__main__':
         f"-e JOB_ID={job_id}",
         f"-e NUMBER_OF_CPUS=1",
         f"-e PIPE_API_KEY={PIPE_API_KEY}",
+        f"-e PIPE_BASE_URL={os.environ['PIPE_BASE_URL']}",
         f"{docker_image}",
     ]
 

@@ -46,13 +46,25 @@ The following environment variables are made available to your code, when runnin
 * AVAILABLE_MEMORY - an integer count of Mib of available memory
 
 ## Testing you code locally
-As you write you plugin, it can be useful to run it locally, before pushing to dockerhub. The file `runner_test.py` allows you to do this. 
+As you write you plugin, it can be useful to run it locally, before pushing to dockerhub. 
 
 You will need the [pipebio sdk](https://pypi.org/project/pipebio/) installed locally, see notes there on how to use with an _.env_ file, to set your _PIPE_API_KEY_.
 
-`runner_test.py` first creates a job record, that you plugin code can interact with (getting details of the input docs/updating status etc).
+Both techniques, creates a job record, that your plugin code can interact with (getting details of the input docs/updating status etc).
 
-It then runs a `docker run ...` command of you packaged code, on your local machine, writing all output to the terminal.
+There are two ways to test your code: 
+
+#### Debugging your code locally
+The file `runner_test_debug.py` is intended for this.
+
+Running this file calls `runner.py`. You can set breakpoints in your IDE and then step through your code as you wish.
+
+#### Running docker images
+The file `runner_test_docker_image.py` is intended for this. 
+
+You will need the [pipebio sdk](https://pypi.org/project/pipebio/) installed locally, see notes there on how to use with an _.env_ file, to set your _PIPE_API_KEY_.
+
+Running this file runs a `docker run ...` command of you packaged code, on your local machine, writing all output to the terminal.
 
 ## Important things to be aware of
 1. You are responsible for handling failures in your code.
