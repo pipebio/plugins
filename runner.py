@@ -1,5 +1,6 @@
 import os
 import traceback
+from typing import Optional
 
 from pipebio.models.job_status import JobStatus
 from pipebio.pipebio_client import PipebioClient
@@ -18,13 +19,13 @@ def main():
     client = PipebioClient()
 
     try:
+        job = client.jobs.get()
+        user = client.user
+
         # Update the job, to indicate that it is running.
         client.jobs.update(status=JobStatus.RUNNING,
                            progress=1,
                            messages=['Running plugin job.'])
-
-        user = client.user
-        job = client.jobs.get()
 
         # Add job status message, showing the user the plugin is running as.
         client.jobs.update(status=JobStatus.RUNNING,
@@ -64,9 +65,12 @@ def main():
         print(str(exception))
         print(track)
         messages = [exception.user_message]
-        if "CREATOR_EMAIL" in os.environ:
+
+        creator = get_plugin_author(client, job)
+        if creator is not None:
             # Allows users who experience issue to get in contact with the Plugin creator.
-            messages.append(f"The plugin developer {os.environ['CREATOR_EMAIL']} may be able to help")
+            messages.append(f"The plugin developer {creator} may be able to help")
+
         client.jobs.update(status=JobStatus.FAILED,
                            progress=100,
                            messages=messages)
@@ -78,13 +82,42 @@ def main():
         print(str_exception)
         print(track)
         messages = [f"Unexpected error in plugin job: {str_exception}"]
-        if "CREATOR_EMAIL" in os.environ:
+
+        creator = get_plugin_author(client, job)
+        if creator is not None:
             # Allows users who experience issue to get in contact with the Plugin creator.
-            messages.append(f"The plugin developer {os.environ['CREATOR_EMAIL']} may be able to help")
+            messages.append(f"The plugin developer {creator} may be able to help")
+
         client.jobs.update(status=JobStatus.FAILED,
                            progress=100,
                            messages=messages)
         raise exception
+
+
+def get_plugin_author(client, job) -> Optional[str]:
+    """
+    Utility function to look up the creator of a plugin, useful for creating helpful error messages for users.
+    :param client:
+    :param job:
+    :return:
+    """
+    plugin_id = job["params"]["pluginId"] if "params" in job and "pluginId" in job["params"] else None
+    organization_id = client.user["orgs"][0]["id"] if "orgs" in client.user and len(client.user["orgs"]) > 0 and "id" in client.user["orgs"][0] else None
+
+    if plugin_id is None or organization_id is None:
+        return None
+
+    plugin_response = client.session.get(f"organizations/{organization_id}/lists/{plugin_id}")
+    plugin_response_json = plugin_response.json()
+    creator_id = plugin_response_json["creatorId"] if "creatorId" in plugin_response_json else None
+
+    if creator_id is None:
+        return None
+
+    user_response = client.session.get(f"organizations/{organization_id}/users/{creator_id}")
+    user = user_response.json()
+
+    return user["email"] if "email" in user else None
 
 
 if __name__ == '__main__':

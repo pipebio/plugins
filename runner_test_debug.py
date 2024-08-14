@@ -10,11 +10,11 @@ if __name__ == '__main__':
 
     # The project where the input files are and where then output file/s will be written.
     # Add the project id here.
-    shareable_id = '1c3a16dc-7316-42e1-b3aa-f3954e43f1bc'
+    shareable_id = '<ADD_PROJECT_ID_HERE>'
 
     # Ids of the documents, used as inputs for the plugin.
     # Add your input doc ids here.
-    input_entity_ids = [1659060, 1659058]
+    input_entity_ids = []
 
     # Create a new job
     job_id = client.jobs.create(shareable_id=shareable_id,
