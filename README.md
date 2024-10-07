@@ -60,8 +60,8 @@ The file `runner_test_debug.py` is intended for this.
 Running this file calls `runner.py`. You can set breakpoints in your IDE and then step through your code as you wish.
 
 As this involves you code running locally, outside of the plugin eco system, you will need to set some variables:
-* `shareable_id` - this is the id of the project.
-* `input_entity_ids` - a list of the ids that are inputs for the job (the equivalent of the documents that have been selected in the folder tree.
+* `shareable_id` - this is the id of the project, e.g. `sharable_id = "8245D41B-1907-4545-BAD9-EDA38AC21CCE"`
+* `input_entity_ids` - a list of the ids that are inputs for the job (the equivalent of the documents that have been selected in the folder tree, e.g. `input_entity_ids = [123, 456]`
 
 When your plugin runs on pipebio, these are *automatically* set for you, but you need to do this manually to run the code locally.
 
@@ -73,8 +73,8 @@ You will need the [pipebio sdk](https://pypi.org/project/pipebio/) installed loc
 Running this file runs a `docker run ...` command of you packaged code, on your local machine, writing all output to the terminal.
 
 As this involves you code running locally, outside of the plugin eco system, you will need to set some variables:
-* `shareable_id` - this is the id of the project.
-* `input_entity_ids` - a list of the ids that are inputs for the job (the equivalent of the documents that have been selected in the folder tree.
+* `shareable_id` - this is the id of the project, e.g. `sharable_id = "8245D41B-1907-4545-BAD9-EDA38AC21CCE"`
+* `input_entity_ids` - a list of the ids that are inputs for the job (the equivalent of the documents that have been selected in the folder tree, e.g. `input_entity_ids = [123, 456]`
 
 When your plugin runs on pipebio, these are *automatically* set for you, but you need to do this manually to run the code locally.
 ## Important things to be aware of
