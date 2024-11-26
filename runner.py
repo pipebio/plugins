@@ -45,7 +45,7 @@ def main():
             raise Exception("No documents found in inputEntities")
 
         folder_key = 'TARGET_FOLDER_ID'
-        target_folder_id = int(os.environ[folder_key]) if folder_key in os.environ else None
+        target_folder_id = os.environ[folder_key] if folder_key in os.environ and os.environ[folder_key].isnumeric() else None
 
         # This is the line a plugin author would change, to call your custom code.
         # Below are passed as args (though your use case may need different args):
